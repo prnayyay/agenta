@@ -14,4 +14,10 @@ describe("connectModelGate", () => {
     it("opens only when everything settled with no runnable route", () => {
         expect(connectModelGate({loading: false, candidateCount: 0})).toBe(true)
     })
+
+    it("leaves subscription models to the server's setup check", () => {
+        expect(
+            connectModelGate({loading: false, candidateCount: 0, connectionMode: "self_managed"}),
+        ).toBe(false)
+    })
 })

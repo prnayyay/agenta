@@ -31,7 +31,8 @@ export interface AgentModelKeyStatus {
     loading: boolean
     /**
      * The connect-a-model gate. Active only once every source has settled (no refetch in flight)
-     * with zero runnable routes; credit-funded built-in models count as routes.
+     * with zero runnable routes for a provider-key model. Subscription models use the server's
+     * needs-setup check instead of this provider-key prompt.
      * Banner and composer-block consumers should both key off this.
      */
     gateActive: boolean
@@ -48,16 +49,18 @@ interface HarnessRef {
 }
 
 /**
- * The connect-a-model gate, as a rule over resolved facts. A stored secret alone is insufficient:
- * at least one exact connection/subscription + harness + model route must be runnable.
+ * The connect-a-model gate, as a rule over resolved facts. Subscription models use the server's
+ * needs-setup check; this gate only asks for a provider key when no runnable route was found.
  */
 export const connectModelGate = ({
     loading,
     candidateCount,
+    connectionMode,
 }: {
     loading: boolean
     candidateCount: number
-}): boolean => !loading && candidateCount === 0
+    connectionMode?: unknown
+}): boolean => connectionMode !== "self_managed" && !loading && candidateCount === 0
 
 export function useAgentModelKeyStatus(entityId: string): AgentModelKeyStatus {
     const config = useAtomValue(
@@ -98,6 +101,7 @@ export function useAgentModelKeyStatus(entityId: string): AgentModelKeyStatus {
         const gateActive = connectModelGate({
             loading: candidateSourcesLoading,
             candidateCount: candidateState.candidates.length,
+            connectionMode: llm?.connection?.mode,
         })
 
         return {
